@@ -164,6 +164,7 @@ ISR(PCINT0_vect){
 //	FLsensor = (PINB & 1<<PB5);
 //	BLsensor = (PINB & 1<<PB4);
 //	BRsensor = (PINB & 1<<PB3);
+	PORTD ^= 1<<PD3;
 	if((PINB & 1<<PB0)==0 || (PINB & 1<<PB5)==0){
 		bd(100); //if one of the front sensors sees a white line, go in reverse
 	}
@@ -195,13 +196,31 @@ ISR(PCINT0_vect){
 void displaytest(){
 	//function to test the lcd display attached through I2C
 	//will display the favorite saying of Bender the bending bot from futurama
-	DDRD |= 1<<PD3;
+	DDRB = 0b00000110;
 	PORTD |= 1<<PD3;
+	DDRB = 0b00000110;
 	lcd_init();
 	lcd_print_string("Bite my shiny metal ass");
 	while(1);
 }
 
+
+void linetest(){
+	//tests the line sensors by having the led light up on detection of a white line
+	sei();
+	lcd_init();
+	DDRB |= 1<<PB2 | 1<<PB1;
+	DDRD |= 1<<PD2 | (1<<PD1) | (1<<PD3);
+	PORTD |= 0xA2;
+	pcintset(); //sets up the line sensors interrupts
+	fivekHz();
+	stop();
+	lcd_print_string("hello");
+	while(1){
+		; //wait for the interrupt
+	}
+
+}
 
 void motortest() {
 	//tests the motors and motor code by having the robot move forward,
@@ -238,8 +257,8 @@ void motortest() {
 void irtest(){
 	//function to test the ir sensors and transmitters
 	//will turn on the LEDs attached to pin d3 if the sensors pick up an object
-	DDRD = 0b01001000;
 	sei();
+	delaytimerset();
 	IRsetup();
 	while(1){
 		if((irR == 0)|| (irL ==0)){
@@ -266,10 +285,10 @@ void freerunningtest(){
 	stop();
 	lcd_print_string("wait start"); //wait for official start time
 	while(lastL != 0 && lastR != 0){
-		while((PINB & 1<<PD5) == 0){
+		while((PINB & 1<<PB4) == 0){
 			lastL = 0; //decides the left or right as the first direction to turn based
 		}              //based on the given start side of the operator
-		while((PINB & 1<<PD7) == 0){
+		while((PINB & 1<<PB3) == 0){
 			lastR = 0;
 		}
 	}
